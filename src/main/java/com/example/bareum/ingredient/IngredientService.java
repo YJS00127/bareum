@@ -1,5 +1,6 @@
 package com.example.bareum.ingredient;
 
+import com.example.bareum.ingredient.dto.IngredientAiResponse;
 import com.example.bareum.ingredient.dto.IngredientAnalyzeResponse;
 import com.example.bareum.ingredient.dto.IngredientResult;
 import com.example.bareum.user.User;
@@ -15,7 +16,7 @@ public class IngredientService {
     private final UserRepository userRepository;
     private final VisionService visionService;
     private final IngredientParserService ingredientParserService;
-    private final IngredientAIService ingredientRuleService;
+    private final IngredientAiService ingredientAiService;
     private final GeminiService geminiService;
 
     public IngredientAnalyzeResponse analyze(Long userId, MultipartFile image){
@@ -28,15 +29,21 @@ public class IngredientService {
 
         List<String> ingredientNames = ingredientParserService.parse(extractedText);
 
-        List<IngredientResult> ingredientResults =
-                ingredientRuleService.analyze(ingredientNames, skinType);
+        if (ingredientNames.isEmpty()) {
+            throw new RuntimeException("이미지에서 등록된 성분명을 찾지 못했습니다.");
+        }
 
-        String finalExplain = geminiService.makeSummary(skinType, ingredientResults);
+        IngredientAiResponse aiResponse =
+                ingredientAiService.analyze(ingredientNames, skinType);
+
+        List<IngredientResult> ingredientResults = aiResponse.getResults();
+        String productStatus = aiResponse.getProductStatus();
+
+        String finalExplain =
+                geminiService.makeSummary(skinType, ingredientResults, productStatus);
 
         return new IngredientAnalyzeResponse(
-                skinType,
-                extractedText,
-                ingredientResults,
+                productStatus,
                 finalExplain
         );
     }

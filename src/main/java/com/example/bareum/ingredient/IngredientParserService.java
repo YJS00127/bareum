@@ -1,24 +1,57 @@
 package com.example.bareum.ingredient;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class IngredientParserService {
 
+    private final List<String> ingredientNames = new ArrayList<>();
+
+    @PostConstruct
+    public void loadIngredients() throws Exception {
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                        getClass().getResourceAsStream("/data/ingredients_name.txt"),
+                        StandardCharsets.UTF_8
+                )
+        );
+
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            String ingredient = line.trim();
+
+            if (!ingredient.isBlank()) {
+                ingredientNames.add(ingredient);
+            }
+        }
+
+        reader.close();
+    }
+
     public List<String> parse(String text) {
         String cleanedText = preprocess(text);
 
-        return Arrays.stream(cleanedText.split("[,\\n/·ㆍ]+"))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .filter(s -> s.length() >= 2)
-                .filter(s -> !isUnnecessaryText(s))
-                .distinct()
-                .collect(Collectors.toList());
+        List<String> result = new ArrayList<>();
+
+        for (String ingredient : ingredientNames) {
+            String cleanedIngredient = preprocess(ingredient);
+
+            if (cleanedText.contains(cleanedIngredient)) {
+                if (!result.contains(ingredient)) {
+                    result.add(ingredient);
+                }
+            }
+        }
+
+        return result;
     }
 
     private String preprocess(String text) {
@@ -27,34 +60,21 @@ public class IngredientParserService {
         }
 
         return text
-                .replace("\r", "\n")
-                .replace(":", ",")
-                .replace(";", ",")
-                .replace("，", ",")
-                .replace("ㆍ", ",")
-                .replace("·", ",")
-                .replace("/", ",")
-                .replace("[", " ")
-                .replace("]", " ")
-                .replace("(", " ")
-                .replace(")", " ")
-                .replaceAll("\\s+", " ")
+                .replace("\r", "")
+                .replace("\n", "")
+                .replace(" ", "")
+                .replace(",", "")
+                .replace(".", "")
+                .replace(":", "")
+                .replace(";", "")
+                .replace("，", "")
+                .replace("ㆍ", "")
+                .replace("·", "")
+                .replace("/", "")
+                .replace("[", "")
+                .replace("]", "")
+                .replace("(", "")
+                .replace(")", "")
                 .trim();
-    }
-
-    private boolean isUnnecessaryText(String text) {
-        return text.contains("전성분")
-                || text.contains("사용")
-                || text.contains("주의")
-                || text.contains("화장품")
-                || text.contains("용량")
-                || text.contains("제조")
-                || text.contains("판매")
-                || text.contains("책임")
-                || text.contains("고객")
-                || text.contains("문의")
-                || text.contains("보관")
-                || text.contains("개봉")
-                || text.contains("기한");
     }
 }

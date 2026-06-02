@@ -20,7 +20,7 @@ public class IngredientController {
     )
     public IngredientAnalyzeResponse analyze(
             @RequestParam("userId") Long userId,
-            @RequestPart("image") MultipartFile image
+            @RequestParam("image") MultipartFile image
     ) {
         return ingredientService.analyze(userId, image);
     }

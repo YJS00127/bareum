@@ -8,7 +8,7 @@ import java.util.List;
 @Getter
 @Setter
 public class DiaryRequest {
-    public Long userId;
+    private Long userId;
     private LocalDate date;
     private Integer skinScore;
     private Integer stressScore;
