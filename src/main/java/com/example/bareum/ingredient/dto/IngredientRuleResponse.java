@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 
-public class IngredientAiResponse {
+public class IngredientRuleResponse {
     private List<IngredientResult> results;
     private String productStatus;
 }

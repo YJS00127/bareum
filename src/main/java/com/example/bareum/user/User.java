@@ -1,8 +1,6 @@
 package com.example.bareum.user;
 
-// DB 테이블 만들 때 사용
 import jakarta.persistence.*;
-// getter, setter등 어노테이션으로 생성가능
 import lombok.*;
 
 @Entity
@@ -25,7 +23,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    private String userName;
+    private String nickname;
 
     private String skinType;
 

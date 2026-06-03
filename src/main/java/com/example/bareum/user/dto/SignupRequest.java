@@ -9,6 +9,6 @@ import lombok.Setter;
 public class SignupRequest {
     private String loginId;
     private String password;
-    private String userName;
+    private String nickname;
     private String skinType;
 }

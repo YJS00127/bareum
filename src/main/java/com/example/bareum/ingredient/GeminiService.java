@@ -16,7 +16,7 @@ public class GeminiService {
 
     public String makeSummary(String skinType,
                               List<IngredientResult> results,
-                              String productStatus){
+                              String productStatus) {
         String prompt = buildPrompt(skinType, results, productStatus);
 
         try {
@@ -25,12 +25,13 @@ public class GeminiService {
 
             String text = response.text();
 
-            if(text == null || text.isBlank()){
+            if (text == null || text.isBlank()) {
                 throw new RuntimeException("Gemini 응답이 비어있습니다.");
             }
+
             return text.trim();
 
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Gemini API 호출 중 오류 발생", e);
         }
     }
@@ -39,9 +40,11 @@ public class GeminiService {
         if ("GOOD".equalsIgnoreCase(status)) {
             return "적합";
         }
+
         if ("CAUTION".equalsIgnoreCase(status)) {
             return "주의 필요";
         }
+
         return "보통";
     }
 
@@ -53,45 +56,73 @@ public class GeminiService {
 
         String productStatusKo = toKoreanStatus(productStatus);
 
+        List<String> goodIngredients = results.stream()
+                .filter(result -> "GOOD".equalsIgnoreCase(result.getStatus()))
+                .map(IngredientResult::getName)
+                .toList();
+
+        List<String> cautionIngredients = results.stream()
+                .filter(result -> "CAUTION".equalsIgnoreCase(result.getStatus()))
+                .map(IngredientResult::getName)
+                .toList();
+
+        String goodIngredientText = toQuotedText(goodIngredients);
+        String cautionIngredientText = toQuotedText(cautionIngredients);
+
         sb.append("너는 화장품 성분 분석 결과를 자연스러운 한국어 문장으로 정리하는 역할만 한다.\n");
-        sb.append("절대로 새로운 성분 효능, 위험성, 이유, 함량, 농도를 추측하지 않는다.\n\n");
+        sb.append("제공된 피부타입, 제품 전체 판단, 성분별 라벨 결과만 사용한다.\n");
+        sb.append("성분의 효능, 위험성, 이유, 함량, 농도를 새로 추측하지 않는다.\n");
+        sb.append("'CAUTION으로 분류된', 'GOOD으로 분류된'이라는 표현을 쓰지 않는다.\n");
+        sb.append("'함량', '농도', '많이', '적게', '풍부하게' 같은 표현을 쓰지 않는다.\n\n");
 
         sb.append("사용자 피부 타입: ").append(skinType).append("\n");
-        sb.append("AI 모델의 제품 전체 판단 라벨: ").append(productStatus).append("\n");
-        sb.append("제품 전체 판단의 한국어 표현: ").append(productStatusKo).append("\n\n");
+        sb.append("제품 전체 판단 라벨: ").append(productStatus).append("\n");
+        sb.append("제품 전체 판단 한국어 표현: ").append(productStatusKo).append("\n\n");
 
-        sb.append("라벨 표현 규칙:\n");
-        sb.append("- GOOD은 '적합'이라고 표현한다.\n");
-        sb.append("- NORMAL은 '보통'이라고 표현한다.\n");
-        sb.append("- CAUTION은 '주의 필요'라고 표현한다.\n");
-        sb.append("- GOOD/NORMAL/CAUTION을 한국어 동사처럼 쓰지 마라. 예: 'CAUTION합니다' 금지.\n");
-        sb.append("- 성분 효능을 새로 설명하지 마라. 예: '글리세린은 보습 성분' 같은 표현 금지.\n");
-        sb.append("- 성분 함량을 추측하지 마라. 예: '많이 들어있다', '적게 들어있다', '풍부하다' 금지.\n");
-        sb.append("- 구매 조언, 생활 습관 조언, 사용 팁을 추가하지 마라.\n\n");
-
-        sb.append("성분별 AI 모델 결과:\n");
-
-        for (IngredientResult result : results) {
-            sb.append("- ")
-                    .append(result.getName())
-                    .append(": ")
-                    .append(result.getStatus())
-                    .append(" / 한국어 표현: ")
-                    .append(toKoreanStatus(result.getStatus()))
-                    .append("\n");
+        sb.append("GOOD 성분 목록: ");
+        if (goodIngredients.isEmpty()) {
+            sb.append("없음\n");
+        } else {
+            sb.append(goodIngredientText).append("\n");
         }
 
-        sb.append("\n출력 조건:\n");
-        sb.append("1. 3~5문장으로 작성한다.\n");
-        sb.append("2. 제품 전체 판단을 먼저 말한다.\n");
-        sb.append("3. 성분별 결과는 라벨 중심으로만 정리한다.\n");
-        sb.append("4. 마지막 문장에는 '성분표만으로는 정확한 함량을 알 수 없으므로 참고용으로 확인해 주세요.'를 포함한다.\n\n");
-        sb.append("원하는 출력 예시:\n");
-        sb.append(skinType).append(" 피부 기준으로 이 제품의 전체 판단은 '")
-                .append(productStatusKo).append("'입니다.\n");
-        sb.append("성분별로는 GOOD, NORMAL, CAUTION으로 분류된 결과를 기준으로 확인할 수 있습니다.\n");
+        sb.append("CAUTION 성분 목록: ");
+        if (cautionIngredients.isEmpty()) {
+            sb.append("없음\n");
+        } else {
+            sb.append(cautionIngredientText).append("\n");
+        }
+
+        sb.append("\n출력 규칙:\n");
+        sb.append("1. 반드시 3문장으로 작성한다.\n");
+        sb.append("2. 첫 문장은 피부타입과 제품 전체 판단을 말한다.\n");
+        sb.append("3. productStatus가 CAUTION이면 CAUTION 성분 목록의 성분명을 사용해서 두 번째 문장을 작성한다.\n");
+        sb.append("4. productStatus가 GOOD이면 GOOD 성분 목록의 성분명을 사용해서 두 번째 문장을 작성한다.\n");
+        sb.append("5. productStatus가 NORMAL이면 전체적으로 보통으로 판단되었다고 작성한다.\n");
+        sb.append("6. 'CAUTION으로 분류된', 'GOOD으로 분류된'이라는 표현은 절대 쓰지 않는다.\n");
+        sb.append("7. 마지막 문장은 반드시 '성분표만으로는 정확한 함량을 알 수 없으므로 참고용으로 확인해 주세요.'로 작성한다.\n\n");
+
+        sb.append("출력 예시:\n");
+
+        if ("CAUTION".equalsIgnoreCase(productStatus)) {
+            sb.append(skinType).append(" 피부 기준으로 이 제품은 '주의 필요'로 판단되었습니다.\n");
+            sb.append(cautionIngredientText).append(" 성분이 포함되어 있어 사용 시 주의가 필요합니다.\n");
+        } else if ("GOOD".equalsIgnoreCase(productStatus)) {
+            sb.append(skinType).append(" 피부 기준으로 이 제품은 '적합'으로 판단되었습니다.\n");
+            sb.append(goodIngredientText).append(" 성분이 포함되어 있어 사용자 피부 타입에 비교적 적합한 제품으로 볼 수 있습니다.\n");
+        } else {
+            sb.append(skinType).append(" 피부 기준으로 이 제품은 '보통'으로 판단되었습니다.\n");
+            sb.append("특별히 강한 주의 또는 적합 판단에 해당하는 성분 비율이 높지 않아 보통으로 확인됩니다.\n");
+        }
         sb.append("성분표만으로는 정확한 함량을 알 수 없으므로 참고용으로 확인해 주세요.\n");
 
         return sb.toString();
+    }
+
+    private String toQuotedText(List<String> ingredientNames) {
+        return ingredientNames.stream()
+                .map(name -> "'" + name + "'")
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("");
     }
 }

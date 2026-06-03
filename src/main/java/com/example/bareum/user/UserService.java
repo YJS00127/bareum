@@ -21,7 +21,7 @@ public class UserService {
         User user = User.builder()
             .loginId(request.getLoginId())
             .password(passwordEncoder.encode(request.getPassword()))
-            .userName(request.getUserName())
+            .nickname(request.getNickname())
             .skinType(request.getSkinType())
             .build();
 
@@ -42,7 +42,7 @@ public class UserService {
                 user.getId(),
                 user.getLoginId(),
                 user.getPassword(),
-                user.getUserName(),
+                user.getNickname(),
                 user.getSkinType()
         );
     }

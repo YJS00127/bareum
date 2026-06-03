@@ -2,9 +2,9 @@ package com.example.bareum.ingredient;
 
 import com.example.bareum.ingredient.dto.IngredientAnalyzeResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/api/ingredients")

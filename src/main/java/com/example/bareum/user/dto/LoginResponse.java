@@ -10,6 +10,6 @@ public class LoginResponse {
     private Long userId;
     private String loginId;
     private String password;
-    private String useName;
+    private String nickname;
     private String skinType;
 }
