@@ -5,8 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-
-public class LoginResponse {
+public class SkinTypeUpdateResponse {
     private boolean success;
     private UserInfo user;
 

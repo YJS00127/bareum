@@ -3,6 +3,9 @@ package com.example.bareum.user;
 import com.example.bareum.user.dto.LoginRequest;
 import com.example.bareum.user.dto.LoginResponse;
 import com.example.bareum.user.dto.SignupRequest;
+import com.example.bareum.user.dto.SignupResponse;
+import com.example.bareum.user.dto.SkinTypeUpdateRequest;
+import com.example.bareum.user.dto.SkinTypeUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,9 +16,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public String signup(SignupRequest request) {
+    public SignupResponse signup(SignupRequest request) {
         if (userRepository.existsByLoginId((request.getLoginId()))) {
-            return "이미 존재하는 아이디입니다.";
+            return new SignupResponse(false, "이미 존재하는 아이디입니다.");
         }
 
         User user = User.builder()
@@ -27,23 +30,46 @@ public class UserService {
 
         userRepository.save(user);
 
-        return "회원가입 성공";
+        return new SignupResponse(true, "회원가입 성공");
     }
+
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByLoginId(request.getLoginId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 아이디입니다."));
-
-
-        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
-            throw new IllegalArgumentException("비밀번호가 틀렸습니다.");
+                .orElse(null);
+        if (user == null){
+            return new LoginResponse(false, null);
         }
 
-        return new LoginResponse(
+        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
+            return new LoginResponse(false, null);
+        }
+
+        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo(
                 user.getId(),
                 user.getLoginId(),
-                user.getPassword(),
                 user.getNickname(),
                 user.getSkinType()
         );
+
+        return new LoginResponse(true, userInfo);
+    }
+
+    public SkinTypeUpdateResponse updateSkinType(Long userId, SkinTypeUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자가 없습니다."));
+
+        user.setSkinType(request.getSkinType());
+
+        userRepository.save(user);
+
+        SkinTypeUpdateResponse.UserInfo userInfo =
+                new SkinTypeUpdateResponse.UserInfo(
+                        user.getId(),
+                        user.getLoginId(),
+                        user.getNickname(),
+                        user.getSkinType()
+                );
+
+        return new SkinTypeUpdateResponse(true, userInfo);
     }
 }
