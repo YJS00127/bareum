@@ -6,6 +6,9 @@ import com.example.bareum.user.dto.SignupRequest;
 import com.example.bareum.user.dto.SignupResponse;
 import com.example.bareum.user.dto.SkinTypeUpdateRequest;
 import com.example.bareum.user.dto.SkinTypeUpdateResponse;
+import com.example.bareum.user.dto.UserActionResponse;
+import com.example.bareum.user.dto.PasswordChangeRequest;
+import com.example.bareum.user.dto.DeleteAccountRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,5 +48,37 @@ public class UserController {
             @RequestBody SkinTypeUpdateRequest request
     ) {
         return userService.updateSkinType(userId, request);
+    }
+
+    @PatchMapping("/{userId}/password")
+    public ResponseEntity<UserActionResponse> changePassword(
+            @PathVariable Long userId,
+            @RequestBody PasswordChangeRequest request
+    ) {
+        UserActionResponse response = userService.changePassword(userId, request);
+
+        if (!response.isSuccess()) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<UserActionResponse> deleteAccount(
+            @PathVariable Long userId,
+            @RequestBody DeleteAccountRequest request
+    ) {
+        UserActionResponse response = userService.deleteAccount(userId, request);
+
+        if (!response.isSuccess()) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 }
