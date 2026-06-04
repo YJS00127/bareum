@@ -15,5 +15,4 @@ public class DiaryRequest {
     private Boolean hasTrouble;
     private String weather;
     private String memo;
-    private List<String> productNames;
 }

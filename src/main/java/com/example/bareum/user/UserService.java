@@ -1,5 +1,11 @@
 package com.example.bareum.user;
 
+import com.example.bareum.diary.Diary;
+import com.example.bareum.diary.DiaryRepository;
+import com.example.bareum.user.dto.PasswordChangeRequest;
+import com.example.bareum.user.dto.DeleteAccountRequest;
+import com.example.bareum.user.dto.UserActionResponse;
+import jakarta.transaction.Transactional;
 import com.example.bareum.user.dto.LoginRequest;
 import com.example.bareum.user.dto.LoginResponse;
 import com.example.bareum.user.dto.SignupRequest;
@@ -9,12 +15,14 @@ import com.example.bareum.user.dto.SkinTypeUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DiaryRepository diaryRepository;
 
     public SignupResponse signup(SignupRequest request) {
         if (userRepository.existsByLoginId((request.getLoginId()))) {
@@ -52,6 +60,46 @@ public class UserService {
         );
 
         return new LoginResponse(true, userInfo);
+    }
+
+    public UserActionResponse changePassword(Long userId, PasswordChangeRequest request) {
+        User user = userRepository.findById(userId)
+                .orElse(null);
+
+        if (user == null) {
+            return new UserActionResponse(false);
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            return new UserActionResponse(false);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        userRepository.save(user);
+
+        return new UserActionResponse(true);
+    }
+
+    @Transactional
+    public UserActionResponse deleteAccount(Long userId, DeleteAccountRequest request) {
+        User user = userRepository.findById(userId)
+                .orElse(null);
+
+        if (user == null) {
+            return new UserActionResponse(false);
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return new UserActionResponse(false);
+        }
+
+        List<Diary> diaries = diaryRepository.findByUserId(userId);
+        diaryRepository.deleteAll(diaries);
+
+        userRepository.delete(user);
+
+        return new UserActionResponse(true);
     }
 
     public SkinTypeUpdateResponse updateSkinType(Long userId, SkinTypeUpdateRequest request) {

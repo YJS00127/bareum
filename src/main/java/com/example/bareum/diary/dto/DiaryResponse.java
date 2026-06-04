@@ -17,7 +17,6 @@ public class DiaryResponse {
     private Boolean hasTrouble;
     private String weather;
     private String memo;
-    private List<String> productNames;
 
     public static DiaryResponse from(Diary diary){
         return new DiaryResponse(
@@ -28,8 +27,7 @@ public class DiaryResponse {
                 diary.getStressScore(),
                 diary.getHasTrouble(),
                 diary.getWeather(),
-                diary.getMemo(),
-                diary.getProductsNames()
+                diary.getMemo()
         );
     }
 }

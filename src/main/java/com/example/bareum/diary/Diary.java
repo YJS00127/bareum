@@ -4,7 +4,6 @@ import com.example.bareum.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
 @Getter
@@ -25,9 +24,6 @@ public class Diary {
 
     @Column(columnDefinition = "TEXT")
     private String memo;
-
-    @ElementCollection
-    private List<String> productsNames;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
