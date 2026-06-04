@@ -70,7 +70,7 @@ public class UserService {
             return new UserActionResponse(false);
         }
 
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 8) {
             return new UserActionResponse(false);
         }
 
