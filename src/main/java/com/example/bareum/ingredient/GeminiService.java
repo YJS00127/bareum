@@ -31,8 +31,8 @@ public class GeminiService {
 
             return text.trim();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Gemini API 호출 중 오류 발생", e);
+        } catch(Exception e){
+            return makeFallbackSummary(skinType, results, productStatus);
         }
     }
 
@@ -118,6 +118,51 @@ public class GeminiService {
 
         return sb.toString();
     }
+
+    private String makeFallbackSummary(String skinType,
+                                       List<IngredientResult> results,
+                                       String productStatus) {
+
+        String productStatusKo = toKoreanStatus(productStatus);
+
+        List<String> cautionIngredients = results.stream()
+                .filter(result -> "CAUTION".equalsIgnoreCase(result.getStatus()))
+                .map(IngredientResult::getName)
+                .toList();
+
+        List<String> goodIngredients = results.stream()
+                .filter(result -> "GOOD".equalsIgnoreCase(result.getStatus()))
+                .map(IngredientResult::getName)
+                .toList();
+
+        if ("CAUTION".equalsIgnoreCase(productStatus)) {
+            return skinType + " 피부 기준으로 이 제품은 '" + productStatusKo + "'로 판단되었습니다.\n"
+                    + joinIngredientNames(cautionIngredients) + " 성분이 포함되어 있어 사용 시 주의가 필요합니다.\n"
+                    + "성분표만으로는 정확한 함량을 알 수 없으므로 참고용으로 확인해 주세요.";
+        }
+
+        if ("GOOD".equalsIgnoreCase(productStatus)) {
+            return skinType + " 피부 기준으로 이 제품은 '" + productStatusKo + "'으로 판단되었습니다.\n"
+                    + joinIngredientNames(goodIngredients) + " 성분이 포함되어 있어 사용자에게 적합한 제품으로 판단됩니다.\n"
+                    + "성분표만으로는 정확한 함량을 알 수 없으므로 참고용으로 확인해 주세요.";
+        }
+
+        return skinType + " 피부 기준으로 이 제품은 '" + productStatusKo + "'으로 판단되었습니다.\n"
+                + "특별히 사용 시 주의가 필요한 성분은 확인되지 않았습니다.\n"
+                + "성분표만으로는 정확한 함량을 알 수 없으므로 참고용으로 확인해 주세요.";
+    }
+
+    // 성분명 리스트를 'aaa', 'bbb' 형태로 바꿔주는 메서드
+    private String joinIngredientNames(List<String> ingredientNames) {
+        if (ingredientNames == null || ingredientNames.isEmpty()) {
+            return "해당";
+        }
+
+        return ingredientNames.stream()
+                .map(name -> "'" + name + "'")
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
+
 
     private String toQuotedText(List<String> ingredientNames) {
         return ingredientNames.stream()
